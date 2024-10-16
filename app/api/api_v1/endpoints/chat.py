@@ -42,7 +42,7 @@ db_directory = f"{home_dir_parent.replace(stm, dbstm)}"
 router = APIRouter()
 
 
-@async_retry(max_retries=2, delay=1)
+@async_retry(max_retries=5, delay=2)
 async def invoke_agent_with_retry(
     question_str: str, unique_id: str = "61aaa70565-bdb1-444d-8680-60d0984b2513"
 ):
@@ -61,7 +61,8 @@ async def invoke_agent_with_retry(
     graph = graph_react_agent.workflow.compile(checkpointer=checkpointer)
 
     return graph.invoke(
-        {"messages": [HumanMessage(content=question_str)]}, config=config
+        {"messages": [HumanMessage(content=question_str)]},
+        config=config,
     )
 
 
@@ -78,7 +79,7 @@ class ChatInput(BaseModel):
     "/",
 )
 async def chat_bot(
-    # token: Annotated[str, Depends(security.JWTBearer())], ###TODO: enable this in production to ensure this endpoint cannot be used without Auth. Please set the SECRET_KEY in the .env file
+    # token: Annotated[str, Depends(security.JWTBearer())], ###TODO: uncomment this in production to ensure this endpoint cannot be used without Auth. Please set the SECRET_KEY in the .env file and use it to create a token
     chat_input: ChatInput,
 ) -> Response:
     """
