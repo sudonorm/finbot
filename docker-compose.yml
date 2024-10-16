@@ -1,0 +1,79 @@
+version: '3.3'
+
+services:
+  traefik:
+    # image: "traefik:latest"
+    image: 'traefik:v2.10.7'
+    container_name: 'traefik'
+    command:
+      #- "--log.level=DEBUG"
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+    ports:
+      - '80:80'
+      - '8980:8980'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+    networks:
+      - finbot
+
+  whoami:
+    image: 'traefik/whoami'
+    container_name: 'whoami'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.whoami.rule=Host(`whoami.localhost`)'
+      - 'traefik.http.routers.whoami.entrypoints=web'
+    networks:
+      - finbot
+
+  finbot_server:
+    environment:
+      - PYTHONUNBUFFERED=1
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: finbot_server_img
+    container_name: finbot_server_cont
+    restart: always
+    ports:
+      - '127.0.0.1:8282:8282'
+    command: gunicorn app.main:app --bind 0.0.0.0:8282 -w 1 -k uvicorn.workers.UvicornWorker --timeout 600
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.finbot_server.entrypoints=web'
+      - 'traefik.http.routers.finbot_server.rule=Host(`finbot.localhost`)'
+      - 'traefik.http.services.finbot_server.loadbalancer.server.port=8282'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8282/api/v1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - finbot
+
+  finbot_frontend:
+    environment:
+      - PYTHONUNBUFFERED=1
+    image: finbot_server_img
+    container_name: finbot_frontend_cont
+    restart: always
+    ports:
+      - '127.0.0.1:8501:8501'
+    command: streamlit run chat/src/frontend/main.py
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.finbot_frontend.entrypoints=web'
+      - 'traefik.http.routers.finbot_frontend.rule=Host(`finbotfrontend.localhost`)'
+      - 'traefik.http.services.finbot_frontend.loadbalancer.server.port=8501'
+    networks:
+      - finbot
+    depends_on:
+      finbot_server:
+        condition: service_healthy
+
+networks:
+  finbot:
+    external: false
