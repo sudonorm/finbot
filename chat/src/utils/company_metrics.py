@@ -21,8 +21,18 @@ if not FMP_API_STEM:
 
 
 class CompanyMetrics:
+    """This class contains methods used to pull company metrics from the FMP API"""
 
     def get_company_details(self, ticker: str) -> Union[str, bool]:
+        """This function is used to pull company profile information from the FMP API
+
+        Args:
+            ticker (str): the ticker of the company e.g. MSFT
+
+        Returns:
+            Union[str, bool]: we either return a pipe (|) separated string of the company's information if we find one or
+              we return False if we cannot find anything
+        """
 
         company_profile_metrics = [
             "symbol",
@@ -109,6 +119,15 @@ class CompanyMetrics:
         return company_details
 
     def get_company_earnings_transcript(self, ticker: str) -> Union[str, bool]:
+        """This function can be used to pull a company's earnings transcript from the FMP API
+
+        Args:
+            ticker (str): the ticker of the company e.g. AAPL
+
+        Returns:
+            Union[str, bool]: we either return the company's earnings transcript if we find one
+            or we return False if we cannot find it
+        """
 
         earning_call_transcript = False
 
