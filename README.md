@@ -100,7 +100,7 @@ Note: It might take a few seconds for the bot to respond if the question has a l
 
 - Bot Attention:
 
-  - Because we checkpoint the conversation, FinBot remembers information it has seen in the past and passes this in as further context to reduce the need to requery the information, using a tool, when it has the answer in memory. This may not always be the desired behavior. In the case of FinBot, the messages passed in as extra context has been limited to the last 5. Further improvement on this would be to implement some form of State updating logic.
+  - Because we checkpoint the conversation, FinBot remembers information it has seen in the past and passes this in as further context to reduce the need to requery the information, using a tool, when it has the answer in memory. This may not always be the desired behavior. In the case of FinBot, the messages passed in as extra context has been limited to the last 8. Further improvement on this would be to implement some form of State updating logic.
 
 - Extra Tools:
 
