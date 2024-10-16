@@ -17,6 +17,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_core.runnables import RunnableParallel
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 import sys
 import os
@@ -80,10 +81,8 @@ prompt_template = ChatPromptTemplate(
 ### format output as string instead of AIMessage
 output_parser = StrOutputParser()
 
-### initialize chain
-chain_from_docs = prompt_template | chat_model | output_parser
 
-### assign runnables
-chain_with_source = RunnableParallel(
-    {"context": RunnablePassthrough(), "user_query": RunnablePassthrough()}
-).assign(answer=chain_from_docs)
+### initialize chain. We are using the stuff document chain here. This requires split documents using something like RecursiveCharacterTextSplitter as the context
+chain_with_source = create_stuff_documents_chain(
+    llm=chat_model, prompt=prompt_template, output_parser=output_parser
+)
