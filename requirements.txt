@@ -28,3 +28,4 @@ passlib
 python-jose[cryptography]
 retry
 ordered-set
+faiss-cpu
