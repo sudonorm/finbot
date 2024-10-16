@@ -47,7 +47,8 @@ chat_model = ChatOpenAI(
 
 system_template_str = """
 You are an intelligent assistant that provides answers based solely on the provided context. 
-Do not use any external information or your own knowledge beyond the given context. 
+DO NOT use any external information or your own knowledge beyond the given context.
+DO NOT pull more than five messages from memory to answer the question, to avoid stale knowledge.
 
 ### Context:
 ---
