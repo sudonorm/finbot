@@ -168,3 +168,5 @@ cython_debug/
 *.DS_Store
 .python-version
 *.ipynb
+setup_env_pyenv_macos.sh
+delete_env_pyenv_macos.sh
