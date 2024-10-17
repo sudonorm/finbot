@@ -17,6 +17,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_core.runnables import RunnableParallel
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 import sys
 import os
@@ -45,15 +46,18 @@ chat_model = ChatOpenAI(
 
 ### prompt system template. This is the main instruction
 
-system_template_str = """
-You are an intelligent assistant adept at summarizing long documents. Please provide a concise summary of the following news articles without losing the most important information or context.
-Think step-by-step about what would be needed to answer the user's quesyion {user_query}
-### Articles:
----
-{context}
----
+system_template_str = """TASK: TLDR. As a professional summarizer, create a concise and comprehensive summary of the provided text, be it an article, post, conversation, or passage, while adhering to these guidelines:
+1. Craft a summary that is detailed, thorough, in-depth, and complex, while maintaining clarity and conciseness.
+2. Incorporate main ideas and essential information, eliminating extraneous language and focusing on critical aspects.
+3. Rely strictly on the provided text, without including external information.
+4. Format the summary in paragraph form for easy understanding.
+5. Think step-by-step about what would be needed to answer the user's question {user_query}.
+6. Utilize markdown to cleanly format your output. Example: Bolden key subject matter and potential areas that may need expanded information.
 
-### Summaries:
+### Provided Text:
+{context}
+
+### Summary:
 """
 
 system_prompt = SystemMessagePromptTemplate(
@@ -75,10 +79,7 @@ prompt_template = ChatPromptTemplate(
 ### format output as string instead of AIMessage
 output_parser = StrOutputParser()
 
-### initialize chain
-chain_from_docs = prompt_template | chat_model | output_parser
-
-### assign runnables
-chain_with_source = RunnableParallel(
-    {"context": RunnablePassthrough(), "user_query": RunnablePassthrough()}
-).assign(answer=chain_from_docs)
+### initialize chain. We are using the stuff document chain here. This requires split documents using something like RecursiveCharacterTextSplitter as the context
+chain_with_source = create_stuff_documents_chain(
+    llm=chat_model, prompt=prompt_template, output_parser=output_parser
+)

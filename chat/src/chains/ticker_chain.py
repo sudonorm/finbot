@@ -21,6 +21,7 @@ from langchain_core.runnables import RunnableParallel
 from pydantic import BaseModel, Field
 import sys
 import os
+from typing import List
 
 home_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 home_dir_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -52,7 +53,7 @@ class TickerResponse(BaseModel):
 
 ### prompt system template. This is the main instruction
 ticker_system_template_str = """You are a financial assistant. Given a user query, extract and return the company's ticker symbol if mentioned directly. If the query includes a company name instead of a ticker, check for the ticker for the company and return the ticker.
-Only return the ticker. 
+Only return the tickers. If we have more than one, separate them with a comma.
 User Query: "{user_query}"
 """
 

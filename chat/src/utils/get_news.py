@@ -22,7 +22,8 @@ class News:
             source = ddg._get_url(method="GET", url=url)
             source_text = trafilatura.extract(source)
             return source_text
-        except:
+        except Exception as e:
+            print("An exception occured: ", str(e))
             return False
 
     def get_news_for_user_query(
@@ -50,18 +51,23 @@ class News:
         news_articles = False
 
         ddg = DDGS()
-        res = ddg.text(
-            keywords=user_query,
-            timelimit=timelimit,
-            backend=backend,
-            max_results=max_results,
-        )
 
-        if len(res) > 0:
-            news_articles_lst = [self.get_article(source["href"]) for source in res]
-            news_articles_lst = [x for x in news_articles_lst if x]
+        try:
+            res = ddg.text(
+                keywords=user_query,
+                timelimit=timelimit,
+                backend=backend,
+                max_results=max_results,
+            )
 
-            if len(news_articles_lst) > 0:
-                news_articles = ". ".join(x for x in news_articles_lst if x)
+            if len(res) > 0:
+                news_articles_lst = [self.get_article(source["href"]) for source in res]
+                news_articles_lst = [x for x in news_articles_lst if x]
+
+                if len(news_articles_lst) > 0:
+                    news_articles = ". ".join(x for x in news_articles_lst if x)
+
+        except Exception as e:
+            print("An exception occured: ", str(e))
 
         return news_articles

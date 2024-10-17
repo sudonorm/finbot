@@ -63,9 +63,9 @@ class GraphState(TypedDict):
     Represents the state of our graph.
 
     Attributes:
+        messages: all messages
         question: question
         answer: LLM generation
-        messages: all messages
     """
 
     messages: Annotated[list, add_messages]
@@ -93,7 +93,9 @@ def should_continue(state: GraphState) -> Literal["tools", "__end__"]:
 def call_model(state: GraphState):
     # print(state)
     messages = state["messages"]
-    response = model_tools.invoke(messages)
+    response = model_tools.invoke(
+        messages[-8:]
+    )  ### since we are checkpointing the conversation, to avoid using stale information from memory, we only pass in the last 8 messages
 
     # print("invoke response", response)
     # print("states prior", messages[-1])
