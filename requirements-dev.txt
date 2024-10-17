@@ -31,3 +31,4 @@ python-jose[cryptography]
 retry
 ordered-set
 black
+faiss-cpu

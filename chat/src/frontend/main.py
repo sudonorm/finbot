@@ -79,11 +79,16 @@ if prompt := st.chat_input("What do you want to know?"):
 
     st.session_state.messages.append({"role": "user", "output": prompt})
 
+    if len(st.session_state.content) > 0:
+        response_bdy = {"session_uuid": st.session_state.content.get("session_uuid")}
+    else:
+        response_bdy = {}
+
     with st.spinner("Searching for an answer..."):
         response = requests.post(
             f"{CHATBOT_URL}",
             # headers=headers, ## headers should be enabled if API endpoint Auth is enabled
-            json={"question": prompt, "response_bdy": {}, "language": "en"},
+            json={"question": prompt, "response_bdy": response_bdy, "language": "en"},
         )
 
         if response.status_code == 200:

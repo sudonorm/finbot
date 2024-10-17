@@ -16,6 +16,10 @@ from utils.company_metrics import CompanyMetrics
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain.chains import create_retrieval_chain
 import datetime
 import dotenv
 from core.config import settings
@@ -65,6 +69,7 @@ def get_news_about_events(query: str):
     It should be used when we want to know what was said about a company, profitability of the company, or about people and their opinion about topics.
     It can be used to answer news about past and recent events concerning people or companies because it can be used to browse the internet.
     Unless explicitly stated, it should search for the most recent news close to, or in, {0}
+    DO NOT pull more than five messages from memory to answer the question, to avoid stale knowledge.
     """
 
     news = News()
@@ -72,14 +77,17 @@ def get_news_about_events(query: str):
     ### Here, we only get the first 5 articles
     articles = news.get_news_for_user_query(user_query=query)
 
-    ### We summarize the articles, in case they are too long
-    articles_summarized = summary_chain.chain_with_source.invoke(
-        {"context": articles, "user_query": query}
+    ### Here, we split up the large text returned into chunks.
+    ### We skip summarizing here and feed these chunks straight to the news_chain
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=3000 if len(articles) > 3000 else len(articles),
+        chunk_overlap=200 if len(articles) > 3000 else 0,
     )
+    splits = text_splitter.create_documents([articles])
 
-    ### Then we use the summary to answer the question posed by the user
+    ### Then we use the splits to answer the question posed by the user
     query_response = news_chain.chain_with_source.invoke(
-        {"context": articles_summarized["answer"], "user_query": query}
+        {"context": splits, "user_query": query}
     )
 
     return query_response
@@ -91,6 +99,7 @@ def get_company_earnings_transcript_from_api(query: str):
     This tool is used to summarize an earnings call or conference call of a company from data pulled from an API.
     It should not be used when we want to know certain sentiments surrounding this earning call.
     It should not be used if the question requires that we browse the internet.
+    DO NOT pull more than five messages from memory to answer the question, to avoid stale knowledge.
     """
 
     cmpny_metrics = CompanyMetrics()
@@ -98,7 +107,7 @@ def get_company_earnings_transcript_from_api(query: str):
     ### First, we try to get the ticker
     ticker_response = ticker_chain.chain_with_source.invoke({"user_query": query})
 
-    # print("ticker response: ", ticker_response)
+    # print(ticker_response)
 
     ### Here, we only pull the earnings call for the ticker
     company_earnings_call_transcript = cmpny_metrics.get_company_earnings_transcript(
@@ -107,9 +116,20 @@ def get_company_earnings_transcript_from_api(query: str):
 
     # print("company_earnings_call_transcript: ", company_earnings_call_transcript)
 
-    ### We summarize the earnings call
+    ### Here, we split up the large text returned into chunks.
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=(
+            3000
+            if len(company_earnings_call_transcript) > 3000
+            else len(company_earnings_call_transcript)
+        ),
+        chunk_overlap=(200 if len(company_earnings_call_transcript) > 3000 else 0),
+    )
+    splits = text_splitter.create_documents([company_earnings_call_transcript])
+
+    ### We summarize the earnings call using the splits
     earning_call_transcript_summary_response = summary_chain.chain_with_source.invoke(
-        {"context": company_earnings_call_transcript, "user_query": query}
+        {"context": splits, "user_query": query}
     )
 
     return earning_call_transcript_summary_response
@@ -121,6 +141,7 @@ def get_information_about_a_company(query: str):
     This tool is used to pull certain metrics of a company such as CEO, market cap, current price, names of executives,
     location and other metrics that might be relevant to a publicly listed company.
     It should not be used if the question requires we browse the internet or pull an earnings call or conference call.
+    DO NOT pull more than five messages from memory to answer the question, to avoid stale knowledge.
     """
 
     cmpny_metrics = CompanyMetrics()
@@ -146,7 +167,7 @@ def get_information_about_a_company(query: str):
 
 
 tools = [
-    # apologize, ### this can be turned on, if we want to bot to reply users in a certain way when it cannot find information
+    # apologize, ### this can be turned on if we want to bot to reply users in a certain way when it cannot find information
     get_news_about_events,
     get_company_earnings_transcript_from_api,
     get_information_about_a_company,

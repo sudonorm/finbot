@@ -36,7 +36,7 @@ class Settings:
     ), "Please add the OpenAI api key variable 'OPENAI_API_KEY' to the .env file with a valid api key"
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = parse_cors(
-        v="http://finbot.localhost, https://finbot.localhost, finbot.localhost, http://localhost, http://localhost:8282, https://localhost, https://localhost:8282"
+        v="http://finbot.localhost, https://finbot.localhost, http://finbotfrontend.localhost/, finbotfrontend.localhost, finbotfrontend.localhost/ finbot.localhost, http://localhost, http://localhost:8282, https://localhost, https://localhost:8282, http://localhost:8251"
     )
 
     PROJECT_NAME: str = os.getenv("PROJECT_NAME", None)

@@ -9,14 +9,14 @@ FMP_API_KEY = os.getenv("FMP_API_KEY", False)
 FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
 
 
-if not FMP_API_KEY:
+if not FMP_API_KEY or FMP_API_KEY in ["", None]:
     raise ValueError(
         "An FMP API key is needed to run this script. Please add one to the .env file using the variable name 'FMP_API_KEY' and try again"
     )
 
-if not FMP_API_STEM:
+if not FMP_API_STEM or FMP_API_STEM in ["", None]:
     raise ValueError(
-        "Please add the FMP_API_STEM variable and appropriate URL to the .env file using the variable name 'FMP_API_STEM' and try again"
+        "Please add the FMP_API_STEM variable and appropriate URL to the .env file using the variable name 'FMP_API_STEMv3' and try again"
     )
 
 
@@ -72,49 +72,53 @@ class CompanyMetrics:
         FMP_API_ENDPOINT = "profile"
         FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
 
-        ### ticker information needed
-        ### here we pull the company profile details
-        company_profile_response = requests.get(
-            url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?"}{"apikey="}{FMP_API_KEY}'
-        )
-
-        if (
-            company_profile_response.status_code in [200, 201]
-            and len(company_profile_response.json()) > 0
-        ):
-            result = "|".join(
-                f"{key}{':'}{value}"
-                for key, value in company_profile_response.json()[0].items()
-                if key in company_profile_metrics
+        try:
+            ### ticker information needed
+            ### here we pull the company profile details
+            company_profile_response = requests.get(
+                url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?"}{"apikey="}{FMP_API_KEY}'
             )
 
-        FMP_API_ENDPOINT = "key-executives"
-        FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
+            if (
+                company_profile_response.status_code in [200, 201]
+                and len(company_profile_response.json()) > 0
+            ):
+                result = "|".join(
+                    f"{key}{':'}{value}"
+                    for key, value in company_profile_response.json()[0].items()
+                    if key in company_profile_metrics
+                )
 
-        ### ticker information needed
-        ### here we pull details about the company's executives
-        company_executives = requests.get(
-            url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?"}{"apikey="}{FMP_API_KEY}'
-        )
+            FMP_API_ENDPOINT = "key-executives"
+            FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
 
-        if (
-            company_executives.status_code in [200, 201]
-            and len(company_executives.json()) > 0
-        ):
-            executives = "|".join(
-                x
-                for x in [
-                    f'{k.get("name")}{": "}{k.get("title")}'
-                    for k in company_executives.json()
-                ]
+            ### ticker information needed
+            ### here we pull details about the company's executives
+            company_executives = requests.get(
+                url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?"}{"apikey="}{FMP_API_KEY}'
             )
 
-        if result and executives:
-            company_details = f'{result}{"|"}{executives}'
-        elif result and not executives:
-            company_details = result
-        elif not result and executives:
-            company_details = executives
+            if (
+                company_executives.status_code in [200, 201]
+                and len(company_executives.json()) > 0
+            ):
+                executives = "|".join(
+                    x
+                    for x in [
+                        f'{k.get("name")}{": "}{k.get("title")}'
+                        for k in company_executives.json()
+                    ]
+                )
+
+            if result and executives:
+                company_details = f'{result}{"|"}{executives}'
+            elif result and not executives:
+                company_details = result
+            elif not result and executives:
+                company_details = executives
+
+        except Exception as e:
+            print("An exception occured: ", str(e))
 
         return company_details
 
@@ -134,31 +138,41 @@ class CompanyMetrics:
         FMP_API_ENDPOINT = "earning_call_transcript"
         FMP_API_STEM = os.getenv("FMP_API_STEMv4", False)
 
-        ### ticker information needed
-        ### here, we pull the date of the last earnings call. This can potentially be extended to pull the last x dates
-        last_earning_call = requests.get(
-            url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}{"?symbol="}{ticker}{"&"}{"apikey="}{FMP_API_KEY}'
-        )
+        if not FMP_API_STEM or FMP_API_STEM in ["", None]:
+            raise ValueError(
+                "Please add the FMP_API_STEM variable and appropriate URL to the .env file using the variable name 'FMP_API_STEMv4' and try again"
+            )
 
-        if (
-            last_earning_call.status_code in [200, 201]
-            and len(last_earning_call.json()) > 0
-        ):
-            last_earning_call_month = last_earning_call.json()[0][0]
-            last_earning_call_year = last_earning_call.json()[0][1]
-
-            FMP_API_ENDPOINT = "earning_call_transcript"
-            FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
-
+        try:
             ### ticker information needed
-            earning_call_summary = requests.get(
-                url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?year="}{last_earning_call_year}{"&quarter="}{last_earning_call_month}{"&"}{"apikey="}{FMP_API_KEY}'
+            ### here, we pull the date of the last earnings call. This can potentially be extended to pull the last x dates
+            last_earning_call = requests.get(
+                url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}{"?symbol="}{ticker}{"&"}{"apikey="}{FMP_API_KEY}'
             )
 
             if (
-                earning_call_summary.status_code in [200, 201]
-                and len(earning_call_summary.json()) > 0
+                last_earning_call.status_code in [200, 201]
+                and len(last_earning_call.json()) > 0
             ):
-                earning_call_transcript = earning_call_summary.json()[0].get("content")
+                last_earning_call_month = last_earning_call.json()[0][0]
+                last_earning_call_year = last_earning_call.json()[0][1]
+
+                FMP_API_ENDPOINT = "earning_call_transcript"
+                FMP_API_STEM = os.getenv("FMP_API_STEMv3", False)
+
+                ### ticker information needed
+                earning_call_summary = requests.get(
+                    url=f'{FMP_API_STEM}{FMP_API_ENDPOINT}/{ticker}{"?year="}{last_earning_call_year}{"&quarter="}{last_earning_call_month}{"&"}{"apikey="}{FMP_API_KEY}'
+                )
+
+                if (
+                    earning_call_summary.status_code in [200, 201]
+                    and len(earning_call_summary.json()) > 0
+                ):
+                    earning_call_transcript = earning_call_summary.json()[0].get(
+                        "content"
+                    )
+        except Exception as e:
+            print("An exception occured: ", str(e))
 
         return earning_call_transcript
